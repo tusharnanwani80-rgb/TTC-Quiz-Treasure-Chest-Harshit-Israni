@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TTC Quiz – A Work of Artifice</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&family=Righteous&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+/* ═══════════════════════════════════
+   QUIZ ROOT VARIABLES
+═══════════════════════════════════ */
+:root {
+  --blue:   #4361EE;
+  --orange: #FF6B35;
+  --lime:   #C8FF00;
+  --pink:   #FF3D8A;
+  --white:  #FFFFFF;
+  --off:    #F5F4FF;
+  --dark:   #111118;
+  --grey:   #6B6B80;
+  --light:  #EDEDF7;
+  --green:  #25D366;
+}
+ 
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--off);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent, transparent 18px,
+    rgba(67,97,238,0.045) 18px, rgba(67,97,238,0.045) 19px
+  );
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0;
+}
+ 
+/* ═══════════════════════════════════
+   AD OVERLAY
+═══════════════════════════════════ */
+#adOverlay {
+  position: fixed; inset: 0; z-index: 1000;
+  background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease;
+}
+ 
+/* ── AD STAGE (all ad vars scoped here) ── */
+.stage {
+  --rust:   #E8522A;
+  --rust2:  #FF7043;
+  --cream:  #FFF8F3;
+  --yellow: #FFD93D;
+  --blue:   #4CC9F0;
+  --green:  #06D6A0;
+  --pink:   #FF6B9D;
+  --purple: #A78BFA;
+  --dark:   #2D2A26;
+ 
+  width: 360px; height: 640px;
+  position: relative; overflow: hidden;
+  background: var(--cream);
+  border-radius: 32px;
+  box-shadow:
+    0 0 0 4px #fff,
+    0 0 0 8px var(--rust),
+    0 30px 80px rgba(232,82,42,.3),
+    0 50px 120px rgba(0,0,0,.2);
+}
+ 
+canvas#particles {
+  position: absolute; inset: 0;
+  z-index: 60; pointer-events: none;
+  border-radius: 32px;
+}
+ 
+/* ── SCENES ── */
+.scene {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; z-index: 10;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+ 
+/* S0 — HEY HOOK */
+.s0 { background: var(--yellow); overflow: hidden; }
+.s0 .dots-bg {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,.55) 2px, transparent 2px);
+  background-size: 28px 28px;
+}
+.hey-emoji {
+  font-size: 72px; opacity: 0; transform: scale(0) rotate(-20deg);
+  position: relative; z-index: 2;
+  filter: drop-shadow(0 6px 0 rgba(0,0,0,.12));
+}
+.s0.active .hey-emoji { animation: bounceIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) 0.1s forwards; }
+.hey-text {
+  font-family: 'Fredoka One', cursive; font-size: 80px; line-height: 1;
+  color: var(--dark); text-align: center; position: relative; z-index: 2;
+  opacity: 0; transform: translateY(30px); text-shadow: 0 5px 0 rgba(0,0,0,.1);
+}
+.s0.active .hey-text { animation: adSlideUp 0.35s ease 0.35s forwards; }
+.hey-sub {
+  font-size: 18px; font-weight: 800; color: var(--rust); letter-spacing: 1px;
+  position: relative; z-index: 2; opacity: 0; transform: translateY(15px); margin-top: 10px;
+}
+.s0.active .hey-sub { animation: adSlideUp 0.3s ease 0.6s forwards; }
+.pill-row { display: flex; gap: 8px; position: relative; z-index: 2; margin-top: 20px; opacity: 0; }
+.s0.active .pill-row { animation: adFadeIn 0.3s ease 0.85s forwards; }
+.pill {
+  background: #fff; border-radius: 50px; padding: 6px 14px;
+  font-size: 12px; font-weight: 800; color: var(--dark);
+  box-shadow: 0 3px 0 rgba(0,0,0,.1);
+}
+ 
+/* S1 — COUNTDOWN */
+.s1 { background: var(--cream); overflow: hidden; }
+.s1::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(232,82,42,.08) 0%, transparent 70%);
+}
+.cd-ring {
+  width: 220px; height: 220px; border-radius: 50%;
+  border: 8px solid rgba(232,82,42,.15);
+  display: flex; align-items: center; justify-content: center; position: absolute;
+}
+.cd-ring-inner {
+  width: 170px; height: 170px; border-radius: 50%; background: var(--rust);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 0 #b33d1c, 0 12px 30px rgba(232,82,42,.4);
+  opacity: 0; transform: scale(0);
+}
+.s1.active .cd-ring-inner { animation: popBounce 0.3s cubic-bezier(0.175,0.885,0.32,1.275) 0.05s forwards; }
+.cd-num {
+  font-family: 'Fredoka One', cursive; font-size: 110px; color: #fff;
+  line-height: 1; position: relative; z-index: 2; text-shadow: 0 4px 0 rgba(0,0,0,.2);
+}
+.cd-label {
+  font-size: 14px; font-weight: 800; color: var(--rust); letter-spacing: 4px;
+  text-transform: uppercase; position: absolute; bottom: 130px; opacity: 0;
+}
+.s1.active .cd-label { animation: adFadeIn 0.3s ease 0.3s forwards; }
+ 
+/* S2 — TITLE BLAST */
+.s2 { background: var(--cream); overflow: hidden; }
+.s2 .burst-bg {
+  position: absolute; inset: 0;
+  background: conic-gradient(from 0deg,#FFD93D 0deg 30deg,transparent 30deg 60deg,#FFD93D 60deg 90deg,transparent 90deg 120deg,#FFD93D 120deg 150deg,transparent 150deg 180deg,#FFD93D 180deg 210deg,transparent 210deg 240deg,#FFD93D 240deg 270deg,transparent 270deg 300deg,#FFD93D 300deg 330deg,transparent 330deg 360deg);
+  opacity: 0; transform: scale(0); border-radius: 50%;
+  width: 600px; height: 600px; top: 50%; left: 50%; margin: -300px 0 0 -300px;
+}
+.s2.active .burst-bg { animation: burstExpand 0.5s ease 0s forwards; }
+.s2 .logo-ring {
+  width: 100px; height: 100px; border-radius: 50%; background: var(--rust);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 0 #b33d1c, 0 10px 24px rgba(232,82,42,.35);
+  margin-bottom: 16px; position: relative; z-index: 2;
+  opacity: 0; transform: scale(0) rotate(-180deg);
+}
+.s2.active .logo-ring { animation: spinIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275) 0.15s forwards; }
+.s2 .logo-ring img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; }
+.big-ttc {
+  font-family: 'Fredoka One', cursive; font-size: 100px; line-height: .95;
+  color: var(--rust); text-align: center; position: relative; z-index: 2;
+  opacity: 0; transform: scale(0.4) rotate(-6deg); text-shadow: 0 6px 0 #b33d1c; letter-spacing: -2px;
+}
+.s2.active .big-ttc { animation: blastIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275) 0.25s forwards; }
+.big-quiz {
+  font-family: 'Fredoka One', cursive; font-size: 86px; line-height: .95;
+  color: var(--dark); text-align: center; position: relative; z-index: 2;
+  opacity: 0; transform: scale(0.4) rotate(6deg); text-shadow: 0 5px 0 rgba(0,0,0,.15);
+}
+.s2.active .big-quiz { animation: blastIn 0.35s cubic-bezier(0.175,0.885,0.32,1.275) 0.38s forwards; }
+.v2-tag {
+  background: var(--green); color: #fff; font-size: 12px; font-weight: 900;
+  letter-spacing: 2px; padding: 6px 18px; border-radius: 50px; position: relative; z-index: 2;
+  margin-top: 14px; box-shadow: 0 4px 0 #04a87e; opacity: 0; transform: translateY(15px);
+}
+.s2.active .v2-tag { animation: adSlideUp 0.3s ease 0.6s forwards; }
+ 
+/* S3 — FEATURES */
+.s3 { background: var(--cream); padding: 30px 22px; justify-content: flex-start; padding-top: 60px; }
+.s3 .feat-title {
+  font-family: 'Fredoka One', cursive; font-size: 28px; color: var(--dark);
+  text-align: center; margin-bottom: 18px; opacity: 0;
+}
+.s3.active .feat-title { animation: adFadeIn 0.25s ease 0.05s forwards; }
+.feat-list { display: flex; flex-direction: column; gap: 11px; width: 100%; }
+.fcard {
+  display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 18px;
+  opacity: 0; transform: translateX(-50px) scale(.95); position: relative; overflow: hidden;
+}
+.fcard::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,.25); border-radius: 18px; }
+.fcard.c1 { background: #FFE8E0; box-shadow: 0 4px 0 rgba(232,82,42,.25); }
+.fcard.c2 { background: #E8F8FF; box-shadow: 0 4px 0 rgba(76,201,240,.25); }
+.fcard.c3 { background: #E8FFF8; box-shadow: 0 4px 0 rgba(6,214,160,.25); }
+.fcard.c4 { background: #FFF5E0; box-shadow: 0 4px 0 rgba(255,217,61,.4); }
+.s3.active .fcard:nth-child(1) { animation: cardBounce 0.25s cubic-bezier(0.175,0.885,0.32,1.275) 0.15s forwards; }
+.s3.active .fcard:nth-child(2) { animation: cardBounce 0.25s cubic-bezier(0.175,0.885,0.32,1.275) 0.3s forwards; }
+.s3.active .fcard:nth-child(3) { animation: cardBounce 0.25s cubic-bezier(0.175,0.885,0.32,1.275) 0.45s forwards; }
+.s3.active .fcard:nth-child(4) { animation: cardBounce 0.25s cubic-bezier(0.175,0.885,0.32,1.275) 0.6s forwards; }
+.fcard .ficon { font-size: 32px; flex-shrink: 0; position: relative; z-index: 1; }
+.fcard .finfo { flex: 1; position: relative; z-index: 1; }
+.fcard .finfo .flabel { font-size: 11px; font-weight: 700; color: rgba(45,42,38,.4); text-transform: uppercase; letter-spacing: 1px; }
+.fcard .finfo .fval { font-size: 16px; font-weight: 900; color: var(--dark); margin-top: 1px; }
+.fcard .fbadge { font-size: 10px; font-weight: 900; letter-spacing: 1px; padding: 4px 10px; border-radius: 50px; position: relative; z-index: 1; }
+.fbadge.new { background: var(--rust); color: #fff; }
+.fbadge.v2  { background: var(--green); color: #fff; }
+ 
+/* S4 — UPDATE */
+.s4 { background: var(--rust); overflow: hidden; }
+.s4 .confetti-bg {
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle,rgba(255,255,255,.12) 3px,transparent 3px), radial-gradient(circle,rgba(255,217,61,.25) 2px,transparent 2px);
+  background-size: 40px 40px, 25px 25px; background-position: 0 0, 12px 12px;
+}
+.s4 .zigzag { position: absolute; top: 0; left: 0; right: 0; height: 30px; background: var(--cream); clip-path: polygon(0 0,5% 100%,10% 0,15% 100%,20% 0,25% 100%,30% 0,35% 100%,40% 0,45% 100%,50% 0,55% 100%,60% 0,65% 100%,70% 0,75% 100%,80% 0,85% 100%,90% 0,95% 100%,100% 0,100% 0,0 0); }
+.s4 .zigzag-bot { position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: var(--cream); clip-path: polygon(0 100%,5% 0,10% 100%,15% 0,20% 100%,25% 0,30% 100%,35% 0,40% 100%,45% 0,50% 100%,55% 0,60% 100%,65% 0,70% 100%,75% 0,80% 100%,85% 0,90% 100%,95% 0,100% 100%,100% 100%,0 100%); }
+.update-badge {
+  background: var(--yellow); color: var(--dark); font-size: 11px; font-weight: 900;
+  letter-spacing: 3px; padding: 7px 20px; border-radius: 50px; position: relative; z-index: 2;
+  box-shadow: 0 4px 0 rgba(0,0,0,.15); opacity: 0; transform: scale(0);
+}
+.s4.active .update-badge { animation: popBounce 0.3s cubic-bezier(0.175,0.885,0.32,1.275) 0.1s forwards; }
+.update-headline {
+  font-family: 'Fredoka One', cursive; font-size: 62px; line-height: 1; color: #fff;
+  text-align: center; text-shadow: 0 5px 0 rgba(0,0,0,.2); position: relative; z-index: 2;
+  margin-top: 16px; opacity: 0; transform: scale(0.7);
+}
+.s4.active .update-headline { animation: popBounce 0.35s cubic-bezier(0.175,0.885,0.32,1.275) 0.28s forwards; }
+.update-items { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; position: relative; z-index: 2; width: 85%; }
+.uitem { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.22); border-radius: 14px; padding: 11px 16px; opacity: 0; transform: translateY(20px); }
+.uitem .uicon { font-size: 22px; }
+.uitem .utxt { font-size: 14px; font-weight: 800; color: #fff; }
+.s4.active .uitem:nth-child(1) { animation: adSlideUp 0.25s ease 0.6s forwards; }
+.s4.active .uitem:nth-child(2) { animation: adSlideUp 0.25s ease 0.75s forwards; }
+.s4.active .uitem:nth-child(3) { animation: adSlideUp 0.25s ease 0.9s forwards; }
+ 
+/* S5 — CTA */
+.s5 { background: var(--cream); overflow: hidden; }
+.s5 .top-wave { position: absolute; top: 0; left: 0; right: 0; height: 200px; background: var(--yellow); clip-path: ellipse(55% 60% at 50% 0%); }
+.stars-row { display: flex; gap: 6px; margin-bottom: 16px; position: relative; z-index: 2; opacity: 0; }
+.s5.active .stars-row { animation: adFadeIn 0.3s ease 0.1s forwards; }
+.stars-row span { font-size: 28px; filter: drop-shadow(0 2px 0 rgba(0,0,0,.1)); }
+.cta-logo-wrap { position: relative; z-index: 2; opacity: 0; transform: scale(0) rotate(-360deg); margin-bottom: 14px; }
+.s5.active .cta-logo-wrap { animation: spinIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275) 0.2s forwards; }
+.cta-logo-wrap img { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 6px 0 var(--rust), 0 12px 24px rgba(232,82,42,.3); }
+.cta-main-title {
+  font-family: 'Fredoka One', cursive; font-size: 72px; line-height: 1;
+  color: var(--dark); text-align: center; position: relative; z-index: 2;
+  opacity: 0; transform: translateY(25px); letter-spacing: -1px;
+}
+.cta-main-title span { color: var(--rust); }
+.s5.active .cta-main-title { animation: adSlideUp 0.3s ease 0.45s forwards; }
+.cta-subtitle {
+  font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900;
+  color: rgba(45,42,38,.55); text-align: center; position: relative; z-index: 2;
+  opacity: 0; transform: translateY(10px); margin-top: 4px; letter-spacing: 0.5px;
+}
+.s5.active .cta-subtitle { animation: adSlideUp 0.3s ease 0.65s forwards; }
+.tag-row { display: flex; gap: 8px; margin-top: 14px; position: relative; z-index: 2; opacity: 0; }
+.s5.active .tag-row { animation: adFadeIn 0.3s ease 0.75s forwards; }
+.tag { font-size: 11px; font-weight: 900; letter-spacing: 1px; padding: 6px 14px; border-radius: 50px; box-shadow: 0 3px 0 rgba(0,0,0,.12); }
+.tag.t1 { background: var(--blue); color: #fff; }
+.tag.t2 { background: var(--green); color: #fff; }
+.tag.t3 { background: var(--pink); color: #fff; }
+.play-btn {
+  margin-top: 22px; background: var(--rust); color: #fff;
+  font-family: 'Fredoka One', cursive; font-size: 22px; letter-spacing: 1px;
+  padding: 18px 48px; border-radius: 18px; border: none; cursor: pointer;
+  box-shadow: 0 7px 0 #b33d1c, 0 12px 24px rgba(232,82,42,.3);
+  position: relative; z-index: 2; opacity: 0; transform: translateY(20px) scale(.9);
+  transition: transform 0.1s, box-shadow 0.1s; overflow: hidden;
+}
+.play-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent); animation: adShimmer 2s linear 1.2s infinite; }
+.s5.active .play-btn { animation: adSlideUp 0.35s cubic-bezier(0.175,0.885,0.32,1.275) 1s forwards, btnPulse 1.8s ease 1.5s infinite; }
+.play-btn:hover { transform: translateY(-2px) scale(1.03) !important; box-shadow: 0 10px 0 #b33d1c, 0 16px 30px rgba(232,82,42,.35) !important; }
+.play-btn:active { transform: translateY(5px) scale(.98) !important; box-shadow: 0 2px 0 #b33d1c !important; }
+.cta-tagline { font-size: 11px; font-weight: 700; color: rgba(45,42,38,.35); text-align: center; margin-top: 14px; letter-spacing: 1px; position: relative; z-index: 2; opacity: 0; }
+.s5.active .cta-tagline { animation: adFadeIn 0.3s ease 1.3s forwards; }
+ 
+/* ── SCENE DOTS ── */
+.scene-dots { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 5px; z-index: 200; }
+.sdot { width: 6px; height: 6px; border-radius: 50%; background: rgba(45,42,38,.15); transition: all 0.3s; }
+.sdot.on { background: var(--rust); width: 20px; border-radius: 3px; }
+ 
+/* ── PROGRESS ── */
+.prog-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: rgba(45,42,38,.06); z-index: 300; border-radius: 0 0 32px 32px; overflow: hidden; }
+.prog-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--rust), var(--yellow)); border-radius: 0 0 32px 32px; box-shadow: 0 0 8px rgba(232,82,42,.5); }
+ 
+/* ── REPLAY ── */
+.replay-btn {
+  position: absolute; bottom: 14px; right: 14px;
+  background: var(--rust); color: #fff; font-family: 'Fredoka One', cursive;
+  font-size: 13px; letter-spacing: 1px; padding: 8px 18px; border-radius: 50px; border: none;
+  cursor: pointer; box-shadow: 0 3px 0 #b33d1c; opacity: 0; transition: opacity 0.3s; z-index: 500;
+}
+.replay-btn.show { opacity: 1; }
+ 
+/* ── START SCREEN ── */
+.start-screen {
+  position: absolute; inset: 0; z-index: 400; background: var(--cream);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 32px; overflow: hidden; transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.start-screen.hide { opacity: 0; transform: scale(1.05); pointer-events: none; }
+.start-screen .top-blob { position: absolute; top: 0; left: 0; right: 0; height: 260px; background: var(--yellow); clip-path: ellipse(60% 65% at 50% 0%); }
+.start-screen .bot-blob { position: absolute; bottom: 0; left: 0; right: 0; height: 120px; background: rgba(232,82,42,.08); clip-path: ellipse(70% 80% at 50% 100%); }
+.start-logo { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid #fff; box-shadow: 0 6px 0 var(--rust), 0 14px 28px rgba(232,82,42,.25); position: relative; z-index: 2; animation: adFloat 3s ease-in-out infinite; }
+.start-ttc { font-family: 'Fredoka One', cursive; font-size: 52px; line-height: 1; color: var(--rust); text-align: center; position: relative; z-index: 2; margin-top: 18px; text-shadow: 0 4px 0 #b33d1c; }
+.start-ttc span { color: var(--dark); }
+.start-tagline { font-size: 14px; font-weight: 800; color: rgba(45,42,38,.5); letter-spacing: 1px; position: relative; z-index: 2; margin-top: 6px; text-align: center; }
+.start-badge { background: var(--green); color: #fff; font-size: 11px; font-weight: 900; letter-spacing: 2px; padding: 6px 16px; border-radius: 50px; position: relative; z-index: 2; margin-top: 14px; box-shadow: 0 4px 0 #04a87e; }
+.start-btn {
+  margin-top: 36px; background: var(--rust); color: #fff;
+  font-family: 'Fredoka One', cursive; font-size: 24px; letter-spacing: 1px;
+  padding: 18px 56px; border-radius: 18px; border: none; cursor: pointer;
+  box-shadow: 0 7px 0 #b33d1c, 0 14px 28px rgba(232,82,42,.3);
+  position: relative; z-index: 2; overflow: hidden;
+  animation: btnPulse 1.8s ease infinite; transition: transform 0.1s, box-shadow 0.1s;
+}
+.start-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent); animation: adShimmer 2s linear infinite; }
+.start-btn:hover  { transform: translateY(-2px); box-shadow: 0 10px 0 #b33d1c, 0 18px 32px rgba(232,82,42,.35); }
+.start-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #b33d1c; }
+.start-note { font-size: 11px; font-weight: 700; color: rgba(45,42,38,.3); letter-spacing: 1px; position: relative; z-index: 2; margin-top: 16px; }
+ 
+/* ── AD KEYFRAMES (prefixed to avoid quiz conflicts) ── */
+@keyframes bounceIn  { 0%{opacity:0;transform:scale(0) rotate(-20deg)} 60%{transform:scale(1.2) rotate(5deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+@keyframes adSlideUp { from{opacity:0;transform:translateY(25px)} to{opacity:1;transform:translateY(0)} }
+@keyframes adFadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes popBounce { 0%{opacity:0;transform:scale(0)} 65%{transform:scale(1.12)} 100%{opacity:1;transform:scale(1)} }
+@keyframes blastIn   { 0%{opacity:0;transform:scale(0.4) rotate(-6deg)} 65%{transform:scale(1.08) rotate(1deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+@keyframes spinIn    { 0%{opacity:0;transform:scale(0) rotate(-360deg)} 100%{opacity:1;transform:scale(1) rotate(0deg)} }
+@keyframes burstExpand { 0%{opacity:.4;transform:scale(0) rotate(0)} 100%{opacity:0;transform:scale(3) rotate(30deg)} }
+@keyframes cardBounce  { 0%{opacity:0;transform:translateX(-50px) scale(.95)} 65%{transform:translateX(5px) scale(1.02)} 100%{opacity:1;transform:translateX(0) scale(1)} }
+@keyframes adShimmer   { from{left:-100%} to{left:200%} }
+@keyframes btnPulse    { 0%,100%{box-shadow:0 7px 0 #b33d1c,0 12px 24px rgba(232,82,42,.3)} 50%{box-shadow:0 7px 0 #b33d1c,0 12px 40px rgba(232,82,42,.55)} }
+@keyframes adFloat     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes screenShake { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-5px,3px)} 40%{transform:translate(5px,-3px)} 60%{transform:translate(-4px,4px)} 80%{transform:translate(4px,-2px)} }
+ 
+/* ═══════════════════════════════════
+   QUIZ STYLES
+═══════════════════════════════════ */
+.app { width: 430px; max-width: 95vw; display: none; }
+ 
+.screen { display: none; }
+.screen.active {
+  display: block;
+  animation: popIn 0.42s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.92) translateY(18px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+ 
+.card {
+  background: var(--white); border: 3px solid var(--dark);
+  border-radius: 24px; padding: 32px 28px;
+  box-shadow: 8px 8px 0px var(--dark); text-align: center;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+  background: linear-gradient(90deg, var(--blue), var(--pink), var(--orange), var(--lime));
+}
+ 
+.logo {
+  width: 72px; height: 72px; object-fit: contain; border-radius: 50%;
+  border: 3px solid var(--dark); box-shadow: 3px 3px 0 var(--dark);
+  margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;
+}
+ 
+.chip {
+  display: inline-block; background: var(--lime); color: var(--dark);
+  font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+  padding: 5px 14px; border-radius: 50px; border: 2px solid var(--dark);
+  box-shadow: 2px 2px 0 var(--dark); margin-bottom: 14px;
+}
+ 
+h2 { font-family: 'Righteous', cursive; font-size: 28px; color: var(--dark); line-height: 1.2; margin-bottom: 8px; }
+p.sub { font-size: 14px; color: var(--grey); font-weight: 500; margin-bottom: 20px; }
+ 
+.input-field {
+  width: 100%; padding: 13px 16px; font-family: 'DM Sans', sans-serif;
+  font-size: 15px; font-weight: 700; color: var(--dark); background: var(--off);
+  border: 2.5px solid var(--dark); border-radius: 14px; outline: none;
+  box-shadow: 3px 3px 0 var(--dark); transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+  margin-bottom: 18px;
+}
+.input-field:focus { box-shadow: 3px 3px 0 var(--blue); border-color: var(--blue); transform: translate(-1px,-1px); }
+.input-field::placeholder { color: #aaa; font-weight: 500; }
+ 
+.btn {
+  display: inline-block; width: 100%; padding: 14px 22px;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 800;
+  border: 2.5px solid var(--dark); border-radius: 14px; cursor: pointer;
+  text-align: center; text-decoration: none; letter-spacing: 0.3px;
+  transition: transform 0.12s, box-shadow 0.12s; box-shadow: 4px 4px 0 var(--dark); margin-top: 10px;
+}
+.btn:hover  { transform: translate(-2px,-2px); box-shadow: 6px 6px 0 var(--dark); }
+.btn:active { transform: translate(2px,2px);   box-shadow: 2px 2px 0 var(--dark); }
+.btn-blue   { background: var(--blue);  color: white; }
+.btn-lime   { background: var(--lime);  color: var(--dark); }
+.btn-pink   { background: var(--pink);  color: white; position: relative; overflow: hidden; }
+.btn-green  { background: var(--green); color: white; }
+.btn-ghost  { background: transparent; color: var(--grey); border-color: var(--light); box-shadow: 4px 4px 0 var(--light); }
+.btn-ghost:hover { border-color: var(--dark); color: var(--dark); box-shadow: 4px 4px 0 var(--dark); }
+ 
+.info-strip { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0 22px; }
+.info-pill {
+  background: var(--off); border: 2px solid var(--dark); border-radius: 50px;
+  padding: 5px 14px; font-size: 12px; font-weight: 700; color: var(--dark); box-shadow: 2px 2px 0 var(--dark);
+}
+ 
+.progress-wrap { margin-bottom: 22px; }
+.progress-meta { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: var(--dark); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
+.progress-track { height: 10px; background: var(--light); border-radius: 50px; border: 2px solid var(--dark); overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--blue), var(--pink)); border-radius: 50px; width: 0%; transition: width 0.5s cubic-bezier(.34,1.2,.64,1); }
+ 
+.question-text { font-family: 'Righteous', cursive; font-size: 17px; color: var(--dark); line-height: 1.5; margin-bottom: 20px; min-height: 60px; text-align: left; }
+ 
+.options-grid { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.option {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+  background: var(--white); border: 2.5px solid var(--dark); border-radius: 14px;
+  cursor: pointer; font-size: 13px; font-weight: 700; color: var(--dark);
+  box-shadow: 3px 3px 0 var(--dark); line-height: 1.4;
+  transition: transform 0.12s, box-shadow 0.12s, background 0.15s, border-color 0.15s;
+  animation: slideIn 0.3s cubic-bezier(.34,1.3,.64,1) backwards;
+}
+.option:nth-child(1) { animation-delay: 0.05s; }
+.option:nth-child(2) { animation-delay: 0.10s; }
+.option:nth-child(3) { animation-delay: 0.15s; }
+.option:nth-child(4) { animation-delay: 0.20s; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: translateX(0); } }
+.option:hover { transform: translate(-2px,-2px); box-shadow: 5px 5px 0 var(--blue); border-color: var(--blue); background: #F0F3FF; }
+.option-letter {
+  width: 30px; height: 30px; border-radius: 9px; background: var(--off);
+  border: 2px solid var(--dark); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 800; flex-shrink: 0; font-family: 'Righteous', cursive;
+  transition: background 0.15s, border-color 0.15s;
+}
+.option.correct { background: #EAFFDA; border-color: #3DB838; box-shadow: 3px 3px 0 #3DB838; transform: none; }
+.option.correct .option-letter { background: #3DB838; border-color: #3DB838; color: white; }
+.option.wrong { background: #FFEAEA; border-color: var(--pink); box-shadow: 3px 3px 0 var(--pink); transform: none; }
+.option.wrong .option-letter { background: var(--pink); border-color: var(--pink); color: white; }
+ 
+.expl-box {
+  display: none; margin-top: 16px; background: #FFFBE6;
+  border: 2.5px solid var(--orange); border-radius: 14px; padding: 13px 16px;
+  font-size: 13px; font-weight: 600; color: #6B4500; text-align: left; line-height: 1.6;
+  box-shadow: 3px 3px 0 var(--orange);
+}
+.expl-box.show { display: block; animation: popIn 0.3s cubic-bezier(.34,1.3,.64,1); }
+.expl-tag { font-family: 'Righteous', cursive; color: var(--orange); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 4px; }
+ 
+.score-block { margin: 10px 0 18px; }
+.score-number { font-family: 'Righteous', cursive; font-size: 76px; color: var(--blue); line-height: 1; text-shadow: 4px 4px 0 var(--dark); }
+.score-denom { font-size: 20px; font-weight: 800; color: var(--grey); }
+.score-pct { display: inline-block; margin-top: 6px; font-size: 13px; font-weight: 800; padding: 4px 16px; border-radius: 50px; border: 2px solid var(--dark); box-shadow: 2px 2px 0 var(--dark); }
+ 
+.fb-box { background: var(--off); border: 2.5px solid var(--dark); border-radius: 16px; padding: 16px; margin: 14px 0; box-shadow: 4px 4px 0 var(--dark); text-align: left; }
+.fb-box .fb-emoji { font-size: 28px; margin-bottom: 6px; display: block; }
+.fb-box strong { font-family: 'Righteous', cursive; font-size: 18px; color: var(--dark); display: block; margin-bottom: 4px; }
+.fb-box p { font-size: 13px; color: var(--grey); margin: 0; font-weight: 600; line-height: 1.5; }
+ 
+.divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--grey); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 2px; background: var(--light); border-radius: 2px; }
+ 
+.rev-head { margin-bottom: 16px; }
+.rev-head .r-emoji { font-size: 28px; margin-bottom: 8px; }
+.rev-head h3 { font-family: 'Righteous', cursive; font-size: 22px; color: var(--dark); margin-bottom: 4px; }
+.rev-head p { font-size: 12px; font-weight: 600; color: var(--grey); }
+ 
+.sburst { position: absolute; font-size: 14px; pointer-events: none; animation: burstAnim 750ms forwards; }
+@keyframes burstAnim { 0%{opacity:1;transform:translate(0,0) scale(1.3) rotate(0deg)} 100%{opacity:0;transform:translate(var(--bx),var(--by)) scale(0) rotate(180deg)} }
+ 
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+ 
+<!-- ════════════════════════
+     AD OVERLAY
+════════════════════════ -->
+<div id="adOverlay">
+  <div class="stage" id="stage">
+ 
+    <!-- START SCREEN -->
+    <div class="start-screen" id="startScreen">
+      <div class="top-blob"></div>
+      <div class="bot-blob"></div>
+      <img class="start-logo" src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" alt="TTC">
+      <div class="start-ttc">TTC <span>QUIZ</span></div>
+      <div class="start-tagline">Tushar Tuition Classes · Wardha</div>
+      <div class="start-badge">✅ Version 2.0 — Updated</div>
+      <button class="start-btn" id="startBtn">🚀 Start Now!</button>
+      <div class="start-note">🔊 Turn on sound for best experience</div>
+    </div>
+ 
+    <!-- DOTS -->
+    <div class="scene-dots" id="sceneDots" style="opacity:0;transition:opacity 0.4s;">
+      <div class="sdot on" id="d0"></div>
+      <div class="sdot" id="d1"></div>
+      <div class="sdot" id="d2"></div>
+      <div class="sdot" id="d3"></div>
+      <div class="sdot" id="d4"></div>
+    </div>
+ 
+    <canvas id="particles"></canvas>
+ 
+    <!-- S0: HEY HOOK -->
+    <div class="scene s0" id="s0">
+      <div class="dots-bg"></div>
+      <div class="hey-emoji">🎉</div>
+      <div class="hey-text">HEY!</div>
+      <div class="hey-sub">Something awesome just dropped!</div>
+      <div class="pill-row">
+        <div class="pill">✨ New</div>
+        <div class="pill">🆓 Free</div>
+        <div class="pill">⚡ Updated</div>
+      </div>
+    </div>
+ 
+    <!-- S1: COUNTDOWN -->
+    <div class="scene s1" id="s1">
+      <div class="cd-ring">
+        <div class="cd-ring-inner">
+          <div class="cd-num" id="cdNum">3</div>
+        </div>
+      </div>
+      <div class="cd-label">GET READY!</div>
+    </div>
+ 
+    <!-- S2: TITLE BLAST -->
+    <div class="scene s2" id="s2">
+      <div class="burst-bg"></div>
+      <div class="logo-ring">
+        <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" alt="TTC">
+      </div>
+      <div class="big-ttc">TTC</div>
+      <div class="big-quiz">QUIZ</div>
+      <div class="v2-tag">✅ VERSION 2.0 — UPDATED</div>
+    </div>
+ 
+    <!-- S3: FEATURES -->
+    <div class="scene s3" id="s3">
+      <div class="feat-title">✨ What's Inside?</div>
+      <div class="feat-list">
+        <div class="fcard c1">
+          <div class="ficon">📖</div>
+          <div class="finfo">
+            <div class="flabel">Subject</div>
+            <div class="fval">English Literature</div>
+          </div>
+        </div>
+        <div class="fcard c2">
+          <div class="ficon">🎯</div>
+          <div class="finfo">
+            <div class="flabel">Challenge</div>
+            <div class="fval">30 Questions</div>
+          </div>
+          <div class="fbadge new">NEW</div>
+        </div>
+        <div class="fcard c3">
+          <div class="ficon">💡</div>
+          <div class="finfo">
+            <div class="flabel">Mode</div>
+            <div class="fval">Instant Explanations</div>
+          </div>
+          <div class="fbadge v2">V2</div>
+        </div>
+        <div class="fcard c4">
+          <div class="ficon">📤</div>
+          <div class="finfo">
+            <div class="flabel">Share</div>
+            <div class="fval">WhatsApp Your Score!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- S4: UPDATE REVEAL -->
+    <div class="scene s4" id="s4">
+      <div class="confetti-bg"></div>
+      <div class="zigzag"></div>
+      <div class="zigzag-bot"></div>
+      <div class="update-badge">🚀 BIG UPDATE</div>
+      <div class="update-headline">BIGGER<br>&amp; BETTER!</div>
+      <div class="update-items">
+        <div class="uitem"><div class="uicon">⚡</div><div class="utxt">Faster &amp; smoother than ever</div></div>
+        <div class="uitem"><div class="uicon">🏆</div><div class="utxt">Scored + full explanations</div></div>
+        <div class="uitem"><div class="uicon">💬</div><div class="utxt">Share results on WhatsApp</div></div>
+      </div>
+    </div>
+ 
+    <!-- S5: CTA -->
+    <div class="scene s5" id="s5">
+      <div class="top-wave"></div>
+      <div class="stars-row">
+        <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+      </div>
+      <div class="cta-logo-wrap">
+        <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" alt="TTC">
+      </div>
+      <div class="cta-main-title">TTC <span>QUIZ</span></div>
+      <div class="cta-subtitle">is here! 🎉</div>
+      <div class="tag-row">
+        <div class="tag t1">Free</div>
+        <div class="tag t2">Instant</div>
+        <div class="tag t3">Fun!</div>
+      </div>
+      <button class="play-btn" onclick="launchQuiz()">▶ Play Now!</button>
+      <div class="cta-tagline">Tushar Tuition Classes · Wardha</div>
+    </div>
+ 
+    <div class="prog-bar"><div class="prog-fill" id="progFill"></div></div>
+    <button class="replay-btn" id="replayBtn" onclick="startAd()">↺ Replay</button>
+  </div>
+</div>
+ 
+<!-- ════════════════════════
+     QUIZ APP
+════════════════════════ -->
+<div class="app" id="quizApp">
+ 
+  <!-- NAME SCREEN -->
+  <div id="nameScreen" class="screen active">
+    <div class="card" style="display:flex;flex-direction:column;align-items:center;">
+      <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" class="logo" alt="TTC">
+      <div class="chip">✦ TTC Wardha</div>
+      <h2>Hey there!<br>What's your name?</h2>
+      <p class="sub">Enter your name to start the quiz 🎯</p>
+      <input id="username" class="input-field" type="text" placeholder="Your full name..." autocomplete="off">
+      <button class="btn btn-blue" onclick="startWelcome()">Continue →</button>
+    </div>
+  </div>
+ 
+  <!-- WELCOME SCREEN -->
+  <div id="welcomeScreen" class="screen">
+    <div class="card">
+      <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" class="logo" alt="TTC">
+      <div class="chip">✦ You're up!</div>
+      <h2 id="welcomeText"></h2>
+      <p class="sub">Ready to prove yourself? 💪</p>
+      <div class="info-strip">
+        <div class="info-pill">📖 English – A Work of Artifice</div>
+        <div class="info-pill">30 Questions</div>
+        <div class="info-pill">🏆 Scored</div>
+        <div class="info-pill">⏱ Self-paced</div>
+      </div>
+      <button class="btn btn-blue" onclick="startQuiz()">Start Quiz 🚀</button>
+    </div>
+  </div>
+ 
+  <!-- QUIZ SCREEN -->
+  <div id="quizScreen" class="screen">
+    <div class="card">
+      <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" class="logo" alt="TTC">
+      <div class="progress-wrap">
+        <div class="progress-meta">
+          <span id="qCounter">Q 1 / 30</span>
+          <span id="qScore">Score: 0</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressBar"></div>
+        </div>
+      </div>
+      <p class="question-text" id="question"></p>
+      <div class="options-grid" id="options"></div>
+      <div class="expl-box" id="explBox">
+        <span class="expl-tag">💡 Explanation</span>
+        <span id="explText"></span>
+      </div>
+      <br>
+      <button id="nextBtn" class="btn btn-blue hidden" onclick="nextQuestion()">Next Question →</button>
+    </div>
+  </div>
+ 
+  <!-- RESULT SCREEN -->
+  <div id="resultScreen" class="screen">
+    <div class="card">
+      <img src="https://i.postimg.cc/x9mDND2Q/Ttc-logo.png" class="logo" alt="TTC">
+      <div class="chip" id="resultChip">✦ Quiz Done!</div>
+      <div class="score-block">
+        <div>
+          <span class="score-number" id="scoreNum">0</span>
+          <span class="score-denom" id="scoreDenom">/30</span>
+        </div>
+        <div class="score-pct" id="scorePct">0%</div>
+      </div>
+      <div class="fb-box">
+        <span class="fb-emoji" id="fbEmoji"></span>
+        <strong id="fbTitle"></strong>
+        <p id="fbMsg"></p>
+      </div>
+      <button class="btn btn-green" onclick="shareWhatsApp()">📤 Share on WhatsApp</button>
+      <button id="ratingBtn" class="btn btn-pink">⭐ Rate Us on Google</button>
+      <button class="btn btn-ghost" onclick="restartQuiz()">↺ Try Again</button>
+      <div class="divider">What others say</div>
+      <div class="rev-head">
+        <div class="r-emoji">🌟</div>
+        <h3>Loved by TTC Families</h3>
+        <p>Real reviews from students &amp; parents across Wardha</p>
+      </div>
+      <a href="https://g.page/r/CdUkswJ0ZulAEBE/review" target="_blank" class="btn btn-lime" style="display:block;text-align:center;">✍️ Give Us a Review</a>
+      <div style="margin-top:20px;">
+        <div class="famewall-embed" data-src="https---maps-app-goo-gl-CCkEWRVgjbvHpQmLA" data-format="grid" style="width:100%;min-height:300px;"></div>
+        <script type="text/javascript" src="https://embed.famewall.io/frame.js" defer></script>
+      </div>
+    </div>
+  </div>
+ 
+</div>
+ 
+<script>
+/* ════════════════════════
+   AD ENGINE
+════════════════════════ */
+let audioCtx = null;
+function ac() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function tone(freq, type, dur, vol=0.25, delay=0) {
+  const ctx=ac(), o=ctx.createOscillator(), g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.type=type; o.frequency.setValueAtTime(freq, ctx.currentTime+delay);
+  g.gain.setValueAtTime(vol, ctx.currentTime+delay);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+dur);
+  o.start(ctx.currentTime+delay); o.stop(ctx.currentTime+delay+dur);
+}
+function noise(dur, vol=0.1, delay=0) {
+  const ctx=ac(), buf=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=ctx.createBufferSource(), g=ctx.createGain();
+  src.buffer=buf; src.connect(g); g.connect(ctx.destination);
+  g.gain.setValueAtTime(vol, ctx.currentTime+delay);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+delay+dur);
+  src.start(ctx.currentTime+delay);
+}
+function sndHey()    { tone(880,'sine',0.15,0.3); tone(1100,'sine',0.12,0.2,0.15); noise(0.08,0.06); }
+function sndBeep(n)  { const f=[0,1200,900,660][n]||880; tone(f,'square',0.1,0.3); noise(0.04,0.04); }
+function sndBlast()  { tone(100,'sawtooth',0.35,0.35); tone(200,'sawtooth',0.25,0.25,0.03); noise(0.2,0.18); }
+function sndWhoosh() { const ctx=ac(),o=ctx.createOscillator(),g=ctx.createGain(); o.connect(g);g.connect(ctx.destination); o.type='sawtooth'; o.frequency.setValueAtTime(1000,ctx.currentTime); o.frequency.exponentialRampToValueAtTime(100,ctx.currentTime+0.3); g.gain.setValueAtTime(0.2,ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3); o.start(); o.stop(ctx.currentTime+0.3); }
+function sndTick()   { tone(1400,'square',0.04,0.2); }
+function sndVictory(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,'sine',0.2,0.22,i*0.09)); noise(0.12,0.04,0.3); }
+function sndPop()    { tone(600,'sine',0.08,0.25); tone(900,'sine',0.06,0.2,0.06); }
+ 
+// Particles
+const cvs=document.getElementById('particles'), cx=cvs.getContext('2d');
+cvs.width=360; cvs.height=640;
+let pts=[];
+const FUN_COLORS=['#E8522A','#FFD93D','#4CC9F0','#06D6A0','#FF6B9D','#A78BFA','#fff'];
+function burst(x,y,n=70,colors=FUN_COLORS){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2, sp=3+Math.random()*9;
+    pts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-4,life:1,decay:0.018+Math.random()*0.025,size:4+Math.random()*7,color:colors[Math.floor(Math.random()*colors.length)],shape:Math.random()>.4?'rect':'circle',rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*0.3});
+  }
+}
+function confettiRain(n=80,delay=0){
+  setTimeout(()=>{
+    for(let i=0;i<n;i++){
+      pts.push({x:Math.random()*370,y:-10-Math.random()*60,vx:(Math.random()-.5)*2.5,vy:3+Math.random()*5,life:1,decay:0.006+Math.random()*0.008,size:6+Math.random()*8,color:FUN_COLORS[Math.floor(Math.random()*FUN_COLORS.length)],shape:Math.random()>.4?'rect':'circle',rot:Math.random()*Math.PI*2,rotV:(Math.random()-.5)*0.15,wobble:Math.random()*Math.PI*2,wobbleSpeed:0.05+Math.random()*0.05});
+    }
+  }, delay);
+}
+function sparks(x,y){ for(let i=0;i<15;i++){ const a=Math.random()*Math.PI*2,sp=2+Math.random()*5; pts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,decay:0.06,size:2+Math.random()*3,color:'#FFD93D',shape:'circle',rot:0,rotV:0}); } }
+function tickPts(){
+  cx.clearRect(0,0,360,640);
+  pts=pts.filter(p=>p.life>0);
+  pts.forEach(p=>{
+    if(p.wobble!==undefined){ p.wobble+=p.wobbleSpeed; p.vx+=Math.sin(p.wobble)*0.08; }
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.2; p.vx*=0.97; p.life-=p.decay; p.rot+=p.rotV;
+    cx.save(); cx.globalAlpha=Math.max(0,p.life); cx.fillStyle=p.color;
+    if(p.shape==='rect'){ cx.translate(p.x,p.y); cx.rotate(p.rot); cx.fillRect(-p.size/2,-p.size/2,p.size,p.size); }
+    else { cx.beginPath(); cx.arc(p.x,p.y,p.size/2,0,Math.PI*2); cx.fill(); }
+    cx.restore();
+  });
+  requestAnimationFrame(tickPts);
+}
+tickPts();
+ 
+const TOTAL_SCENES=6, DURATIONS=[1500,1300,1800,2600,2200,4000];
+const TOTAL_DUR=DURATIONS.reduce((a,b)=>a+b,0);
+let cur=0, mainT=null, cdInt=null, progRaf=null, progT0=null, going=false;
+const stageEl=document.getElementById('stage'), pFill=document.getElementById('progFill'), replayB=document.getElementById('replayBtn');
+ 
+function shake(){ stageEl.style.animation='screenShake 0.25s ease'; setTimeout(()=>stageEl.style.animation='',280); }
+function setDot(n){ for(let i=0;i<TOTAL_SCENES-1;i++){ const d=document.getElementById('d'+i); if(d) d.classList.toggle('on',i===n); } }
+ 
+function goScene(n){
+  document.querySelectorAll('.scene').forEach(s=>s.classList.remove('active'));
+  const s=document.getElementById('s'+n);
+  if(s){ void s.offsetWidth; s.classList.add('active'); }
+  setDot(n);
+  if(n===0){ sndHey(); }
+  if(n===1){ sndBeep(3); runCountdown(); }
+  if(n===2){ sndBlast(); shake(); burst(180,320,90); setTimeout(()=>sndPop(),350); }
+  if(n===3){ sndWhoosh(); [150,300,450,600].forEach(d=>setTimeout(sndTick,d)); }
+  if(n===4){ shake(); sndPop(); setTimeout(sndPop,120); burst(180,220,60,['#fff','#FFD93D','rgba(255,255,255,.6)']); }
+  if(n===5){ sndVictory(); confettiRain(55); burst(60,200,50); burst(300,150,50); }
+}
+ 
+let cdN=3;
+function runCountdown(){
+  clearInterval(cdInt); cdN=3;
+  const el=document.getElementById('cdNum');
+  el.textContent=3; sparks(180,300);
+  cdInt=setInterval(()=>{
+    cdN--;
+    if(cdN<=0){ clearInterval(cdInt); el.textContent=1; sndBeep(1); return; }
+    el.textContent=cdN; sndBeep(cdN); sparks(180,300);
+    el.style.animation=''; void el.offsetWidth;
+  },400);
+}
+ 
+function schedNext(){
+  if(!going) return;
+  mainT=setTimeout(()=>{
+    cur++;
+    if(cur<TOTAL_SCENES){ goScene(cur); schedNext(); }
+    else { going=false; replayB.classList.add('show'); }
+  }, DURATIONS[cur]);
+}
+ 
+function animProg(){
+  progT0=performance.now();
+  function step(now){ const pct=Math.min(((now-progT0)/TOTAL_DUR)*100,100); pFill.style.width=pct+'%'; if(pct<100&&going) progRaf=requestAnimationFrame(step); }
+  progRaf=requestAnimationFrame(step);
+}
+ 
+function startAd(){
+  cur=0; going=true;
+  clearTimeout(mainT); clearInterval(cdInt); cancelAnimationFrame(progRaf);
+  pFill.style.width='0%'; replayB.classList.remove('show');
+  goScene(0); schedNext(); animProg();
+}
+ 
+// Launch quiz — fade out ad, show quiz
+function launchQuiz(){
+  const overlay=document.getElementById('adOverlay');
+  overlay.style.opacity='0';
+  setTimeout(()=>{
+    overlay.style.display='none';
+    const quizApp=document.getElementById('quizApp');
+    quizApp.style.display='block';
+    void quizApp.offsetWidth;
+    const saved=localStorage.getItem('ttc_name');
+    if(saved) document.getElementById('username').value=saved;
+  }, 600);
+}
+ 
+// Start button
+document.getElementById('startBtn').addEventListener('click',()=>{
+  const ss=document.getElementById('startScreen'), dots=document.getElementById('sceneDots');
+  ss.classList.add('hide');
+  setTimeout(()=>{ ss.style.display='none'; dots.style.opacity='1'; }, 400);
+  startAd();
+});
+ 
+/* ════════════════════════
+   QUIZ ENGINE
+════════════════════════ */
+const subjectName="English", chapterName="A Work of Artifice";
+const quizData=[
+  {question:"What is the full form of TTC?",options:["Total Teaching Classes","Tushar Tuition Classes","The Tuition Centre","Tushar Teaching Centre"],correct:"Tushar Tuition Classes",explanation:"TTC Bole To Tushar Tuition Classes 😏"},
+  {question:"What is the meaning of the word Artifice?",options:["A beautiful painting or drawing in living room","Clever trickery or a trap used to fool someone smoothly","A natural way of growing plants in a decorative pot","A type of musical instrument played by women"],correct:"Clever trickery or a trap used to fool someone smoothly",explanation:"Artifice means clever trickery or a trap used to fool someone smoothly."},
+  {question:"What does the term Patriarchal mean in the context of the poem?",options:["A society where women are in charge","A society or system that is entirely controlled by men","A system of growing bonsai trees by gardeners","A natural disaster that strikes mountains"],correct:"A society or system that is entirely controlled by men",explanation:"Patriarchal means a society or system that is entirely controlled by men."},
+  {question:"What figure of speech is used when the poet directly compares a woman to a bonsai tree?",options:["Simile","Personification","Metaphor","Hyperbole"],correct:"Metaphor",explanation:"A metaphor is a figure of speech where you directly compare two unrelated things to explain an idea, such as calling a woman a bonsai tree."},
+  {question:"In the extended metaphor of the poem, who does the Gardener represent?",options:["The forces of nature","Women in society that has been suffering because of society","Men or patriarchal society","Political leaders"],correct:"Men or patriarchal society",explanation:"The poet compares the Gardener to men or patriarchal society."},
+  {question:"Fill in the blank: The bonsai tree could have grown ________ tall on the side of a mountain.",options:["nine inches","eighty feet","ten feet","fifty feet"],correct:"eighty feet",explanation:"The poem states that the bonsai tree could have grown eighty feet tall on the side of a mountain."},
+  {question:"What does the attractive pot symbolize in the poem?",options:["The beauty of nature","A woman's career if she was free","The four walls of a house where women are confined","A protective shield against lightning"],correct:"The four walls of a house where women are confined",explanation:"The attractive pot represents the four walls of a house where women are confined."},
+  {question:"What does the phrase 'till split by lightning' suggest about true freedom?",options:["Freedom means avoiding all natural disasters","Freedom in the outside world comes with natural risks and dangers","Lightning only strikes small trees","Trees in pots are safer from lightning"],correct:"Freedom in the outside world comes with natural risks and dangers",explanation:"The phrase states that true freedom comes with natural risks, but facing those risks is much better and more honorable than living a safe but imprisoned life."},
+  {question:"How high is the bonsai tree after the gardener carefully prunes it?",options:["Eighty feet high","Nine inches high","Ten inches high","Five inches high"],correct:"Nine inches high",explanation:"The poem mentions that after the gardener carefully prunes it, the tree is nine inches high."},
+  {question:"What does the contrast between 'eighty feet tall' and 'nine inches high' highlight?",options:["The different species of trees","The weather conditions on a mountain","Limitless potential with freedom versus a stunted and repressed reality","The gardening skills of the oppressor"],correct:"Limitless potential with freedom versus a stunted and repressed reality",explanation:"Eighty feet highlights vast, limitless potential if given freedom, while nine inches represents the stunted and repressed reality of women confined to household roles."},
+  {question:"What is the meaning of the word 'whittles'?",options:["Watering a plant daily","Singing a happy song","Carefully cutting, trimming, or chopping the branches","Binding the feet of a person"],correct:"Carefully cutting, trimming, or chopping the branches",explanation:"Whittles means carefully cutting, trimming, or chopping the branches of a plant to stop it from growing too large."},
+  {question:"What does the gardener do every day as he whittles back the branches?",options:["He complains","He croons","He cries","He sleeps"],correct:"He croons",explanation:"The poem states that every day as he whittles back the branches, the gardener croons."},
+  {question:"What does the act of the gardener crooning reveal about his character?",options:["He is tired of his daily job and wants freedom","He is a talented musician and a singer","He shows a sinister nature and enjoys the evil process of dominating","He feels deeply guilty for cutting the tree"],correct:"He shows a sinister nature and enjoys the evil process of dominating",explanation:"Crooning shows the sinister and evil nature of the oppressor who actually enjoys cutting the woman down to size without feeling guilt."},
+  {question:"According to the song the gardener croons, what is the nature of the tree?",options:["To be wild and free","To be tall and strong","To be small and cozy, domestic and weak","To be dangerous and sinister"],correct:"To be small and cozy, domestic and weak",explanation:"The gardener tells the tree it is its nature to be small and cozy, domestic and weak."},
+  {question:"How does society trick women regarding their need for protection?",options:["By giving them high paying jobs","By sending them to the mountains to meditate","By hiding the fact that their freedom is being stolen in the name of protection","By asking them to fight in wars"],correct:"By hiding the fact that their freedom is being stolen in the name of protection",explanation:"Society tricks women into believing they should be grateful for protection, hiding the fact that their freedom is actually being stolen."},
+  {question:"Fill in the blank: With living creatures, one must begin ________ to dwarf their growth.",options:["very late","in the middle","very early","occasionally"],correct:"very early",explanation:"The poem states that with living creatures one must begin very early to dwarf their growth."},
+  {question:"What does the verb 'dwarf' mean in the context of the poem?",options:["A mythical creature that lives in mountains","To intentionally stop something from growing to its normal size","To plant seeds in a garden of bonsai plants","To make something look beautiful just like the pot"],correct:"To intentionally stop something from growing to its normal size",explanation:"To dwarf means to intentionally stop something from growing to its normal size; to keep something unnaturally small."},
+  {question:"Which painful ancient Chinese tradition is referred to in the poem?",options:["The crippled brain","The hair in curlers","The bound feet","The attractive pot"],correct:"The bound feet",explanation:"The bound feet refers to an oppressive, painful ancient Chinese tradition where young girls' feet were tightly tied."},
+  {question:"What does the phrase 'the hair in curlers' refer to?",options:["A natural way hair grows in the wild","The Western practice of painfully curling naturally straight hair to look attractive to men","A gardening tool used to trim leaves","A method to protect the head from lightning"],correct:"The Western practice of painfully curling naturally straight hair to look attractive to men",explanation:"The hair in curlers refers to the Western practice of painfully curling naturally straight hair just to look attractive to men."},
+  {question:"What is meant by the phrase 'the crippled brain'?",options:["A physical injury to the head caused by a fall","Brainwashing women into believing their only purpose is to look pretty and serve men","A disease that affects bonsai trees","Lack of basic education in schools"],correct:"Brainwashing women into believing their only purpose is to look pretty and serve men",explanation:"The crippled brain refers to brainwashing women into believing their only purpose in life is to look pretty, serve men, and stay indoors."},
+  {question:"Which phrase highlights the ultimate irony of the poem where men oppress the women they claim to love?",options:["split by lightning","domestic and weak","the hands you love to touch","in the attractive pot"],correct:"the hands you love to touch",explanation:"The hands you love to touch highlights the irony that men oppress, torture, and limit the potential of the very women they claim to love."},
+  {question:"The title 'A Work of Artifice' suggests that the subjugation of women is:",options:["Completely natural and biological","A deliberate, cunning trick played by a male-dominated society","A mistake made by gardeners","An accident of history"],correct:"A deliberate, cunning trick played by a male-dominated society",explanation:"The title suggests the subjugation of women is not natural, but rather a deliberate, cunning trick played by male-dominated society."},
+  {question:"Fill in the blank: Society cleverly masks its oppression as love and ________.",options:["freedom","danger","nature","protection"],correct:"protection",explanation:"Society cleverly masks its oppression as love and protection."},
+  {question:"What does the word Subjugation mean?",options:["Giving equal rights to everyone including women","Cruelly and unfairly controlling someone and taking away their basic freedom","Planting trees on the side of a mountain to make them grow as giant tree","Curling hair for special occasions"],correct:"Cruelly and unfairly controlling someone and taking away their basic freedom",explanation:"Subjugation or Oppression means cruelly and unfairly controlling someone, putting them down, and taking away their basic freedom and rights."},
+  {question:"What is the meaning of the word Sinister?",options:["Peaceful and calming","Seeming evil, dangerous, or causing harm","Small and cozy","Natural and wild"],correct:"Seeming evil, dangerous, or causing harm",explanation:"Sinister is defined as seeming evil, dangerous, or causing harm."},
+  {question:"Where could the bonsai tree have grown if it were left in nature?",options:["In a decorative pot","On the side of a mountain","Inside a cozy house","In a small garden"],correct:"On the side of a mountain",explanation:"The poem states the tree could have grown eighty feet tall on the side of a mountain."},
+  {question:"In the poem, what does the act of cutting the branches symbolize for a woman?",options:["Getting a new haircut","Stopping a woman from pursuing education, careers, or freedom","Buying new clothes for a domestic life","Decorating the four walls of a house"],correct:"Stopping a woman from pursuing education, careers, or freedom",explanation:"Cutting the branches symbolizes stopping a woman from pursuing education, careers, or freedom."},
+  {question:"What type of metaphor is used when a comparison continues throughout the entire poem?",options:["Mixed metaphor","Implied metaphor","Extended metaphor","Dead metaphor"],correct:"Extended metaphor",explanation:"The poem uses an extended metaphor, which is a comparison that continues throughout the entire poem."},
+  {question:"Fill in the blank: The gardener tells the tree it is very ________ to have a pot to grow in.",options:["unlucky","sad","lucky","dangerous"],correct:"lucky",explanation:"The gardener tells the tree how lucky, little tree, to have a pot to grow in."},
+  {question:"What is the core theme of the poem 'A Work of Artifice'?",options:["The proper techniques for growing bonsai trees by gardener","The subjugation and oppression of women in a male-dominated society","The dangers of lightning storms on mountains to women","The history of ancient Chinese footwear and western haircare"],correct:"The subjugation and oppression of women in a male-dominated society",explanation:"The core theme describes the subjugation and oppression of women in a male-dominated (patriarchal) society."}
+];
+ 
+let username='', questions=[], qIndex=0, score=0;
+const letters=["A","B","C","D"];
+ 
+const savedName=localStorage.getItem("ttc_name")||"";
+if(savedName) document.getElementById("username").value=savedName;
+ 
+document.getElementById("username").addEventListener("keydown",e=>{ if(e.key==="Enter") startWelcome(); });
+ 
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  const el=document.getElementById(id);
+  el.classList.remove("active"); void el.offsetWidth; el.classList.add("active");
+}
+function startWelcome(){
+  username=document.getElementById("username").value.trim();
+  if(!username){
+    const inp=document.getElementById("username");
+    inp.style.borderColor="var(--pink)"; inp.style.boxShadow="3px 3px 0 var(--pink)";
+    inp.placeholder="Please enter your name! 👆"; inp.focus(); return;
+  }
+  localStorage.setItem("ttc_name",username);
+  document.getElementById("welcomeText").innerText="Let's go, "+username+"!";
+  showScreen("welcomeScreen");
+}
+function startQuiz(){
+  questions=shuffle(quizData); qIndex=0; score=0;
+  showScreen("quizScreen"); loadQuestion();
+}
+function loadQuestion(){
+  const q=questions[qIndex], opts=shuffle([...q.options]);
+  document.getElementById("qCounter").innerText=`Q ${qIndex+1} / ${questions.length}`;
+  document.getElementById("qScore").innerText=`Score: ${score}`;
+  document.getElementById("progressBar").style.width=((qIndex/questions.length)*100)+"%";
+  document.getElementById("question").innerText=q.question;
+  const container=document.getElementById("options");
+  container.innerHTML="";
+  opts.forEach((opt,i)=>{
+    const div=document.createElement("div");
+    div.className="option";
+    div.innerHTML=`<span class="option-letter">${letters[i]}</span><span class="opt-text">${opt}</span>`;
+    div.onclick=()=>selectOption(div,opt,q);
+    container.appendChild(div);
+  });
+  document.getElementById("explBox").classList.remove("show");
+  document.getElementById("explText").innerText="";
+  document.getElementById("nextBtn").classList.add("hidden");
+}
+function selectOption(el,opt,q){
+  document.querySelectorAll(".option").forEach(o=>o.onclick=null);
+  if(opt===q.correct){
+    el.classList.add("correct"); score++;
+    confetti({particleCount:100,spread:70,origin:{y:0.55},colors:["#4361EE","#C8FF00","#FF3D8A","#FF6B35","#ffffff"]});
+  } else {
+    el.classList.add("wrong");
+    document.querySelectorAll(".option").forEach(o=>{ if(o.querySelector(".opt-text")?.innerText.trim()===q.correct) o.classList.add("correct"); });
+  }
+  document.getElementById("explText").innerText=q.explanation;
+  document.getElementById("explBox").classList.add("show");
+  document.getElementById("qScore").innerText=`Score: ${score}`;
+  document.getElementById("nextBtn").classList.remove("hidden");
+}
+function nextQuestion(){ qIndex++; if(qIndex>=questions.length){ showResult(); return; } loadQuestion(); }
+function showResult(){
+  showScreen("resultScreen");
+  const total=questions.length, pct=Math.round((score/total)*100);
+  document.getElementById("scoreNum").innerText=score;
+  document.getElementById("scoreDenom").innerText=`/${total}`;
+  document.getElementById("scorePct").innerText=pct+"%";
+  let emoji,title,msg,chipText,pctBg;
+  if(pct>=90){ emoji="🔥";title="Absolutely Smashed It!";pctBg="#EAFFDA";msg="Perfect! Outstanding performance, "+username+". Top of the class!";chipText="✦ Outstanding"; }
+  else if(pct>=75){ emoji="💪";title="Really Well Done!";pctBg="#E0F0FF";msg="Strong performance, "+username+"! A little more practice and you'll be perfect.";chipText="✦ Well Done"; }
+  else if(pct>=50){ emoji="📚";title="Good Effort!";pctBg="#FFF8DC";msg="You're on the right track, "+username+". Keep revising and you'll ace it!";chipText="✦ Keep Going"; }
+  else { emoji="🧐";title="Time to Revise!";pctBg="#FFEAEA";msg="Don't worry, "+username+" — go through the chapters once more and try again!";chipText="✦ Try Again"; }
+  document.getElementById("fbEmoji").innerText=emoji;
+  document.getElementById("fbTitle").innerText=title;
+  document.getElementById("fbMsg").innerText=msg;
+  document.getElementById("resultChip").innerText=chipText;
+  document.getElementById("scorePct").style.background=pctBg;
+  confetti({particleCount:180,spread:110,origin:{y:0.45},colors:["#4361EE","#C8FF00","#FF3D8A","#FF6B35","#ffffff"]});
+}
+function shareWhatsApp(){
+  const msg=`🎓 *TTC Quiz Result*\n\n👤 *Student:* ${username}\n📘 *Subject:* ${subjectName}\n📖 *Chapter:* ${chapterName}\n🏆 *Score:* ${score}/${questions.length}\n\n_Tushar Tuition Classes, Wardha_ 📚`;
+  window.open("https://wa.me/?text="+encodeURIComponent(msg));
+}
+function restartQuiz(){ location.reload(); }
+ 
+document.getElementById("ratingBtn").addEventListener("click",function(){
+  for(let i=0;i<16;i++){
+    const s=document.createElement("span");
+    s.className="sburst";
+    s.innerText=["★","✦","●","▲"][Math.floor(Math.random()*4)];
+    s.style.color=["#C8FF00","#FF6B35","#4361EE","#FF3D8A"][Math.floor(Math.random()*4)];
+    s.style.setProperty("--bx",(Math.random()*160-80)+"px");
+    s.style.setProperty("--by",(Math.random()*-150)+"px");
+    s.style.left=(35+Math.random()*30)+"%"; s.style.top="50%";
+    this.appendChild(s); setTimeout(()=>s.remove(),750);
+  }
+  setTimeout(()=>window.open("https://g.page/r/CdUkswJ0ZulAEBE/review"),320);
+});
+</script>
+</body>
+</html>
