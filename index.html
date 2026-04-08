@@ -911,9 +911,7 @@ const letters=["A","B","C","D"];
 /* ════════════════════════
    TRACKING ENGINE
 ════════════════════════ */
-// 🚨 IMPORTANT: REPLACE THE TEXT BELOW WITH YOUR GOOGLE APPS SCRIPT URL 🚨
 const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
-
 let tabSwitches=0, wrongAnswers=[], quizStartTime=0;
  
 document.addEventListener('visibilitychange', ()=>{
@@ -1005,59 +1003,33 @@ function showResult(){
 }
  
 function sendToSheet(total, pct){
-  // 1. Explicitly warn you if the URL is missing or incorrect
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyV3tDfPihYfPZucIoSSWIYnhP3QH1M0zJ-g98L7O42kFW1uYaMYPil_12reXSAx_3E/exec' || APPS_SCRIPT_URL.includes('script.google.c..............')) {
-    alert("⚠️ Developer Alert: The Google Apps Script URL is missing!\n\nPlease paste your real URL into line 376 of the code. The score will not be saved.");
-    console.error("APPS SCRIPT URL is missing or invalid!");
-    return;
-  }
- 
-  console.log("Preparing to send data to Google Sheets...");
-
-  // 2. Handle attempt tracking safely (won't crash if browser blocks storage)
-  let attempt = 1;
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbw3F_A_6aPfEfAmZoT0YF1wbhmFknP8EAj811sT4HPNJhzJlvJvTYkv0o-BFIVho4rp/exec') return;
   try {
     const attemptKey = 'ttc_att_' + subjectName + '_' + chapterName;
-    attempt = parseInt(localStorage.getItem(attemptKey) || '0') + 1;
+    const attempt = parseInt(localStorage.getItem(attemptKey) || '0') + 1;
     localStorage.setItem(attemptKey, attempt);
-  } catch(e) {
-    console.warn("Storage blocked by browser tracking prevention. Defaulting attempt to 1.");
-  }
-
-  // 3. Build Payload
-  const payload = {
-    name: username,
-    subject: subjectName,
-    chapter: chapterName,
-    score: score,
-    total: total,
-    percentage: pct,
-    timeTaken: Math.round((Date.now() - quizStartTime) / 1000),
-    tabSwitches: tabSwitches,
-    attempt: attempt,
-    wrongAnswers: wrongAnswers,
-    device: navigator.userAgent
-  };
-  
-  console.log("Sending payload...", payload);
-
-  // 4. Send the data safely bypassing CORS completely
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors', // <-- THIS BYPASSES BROWSER SECURITY BLOCKS
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify(payload)
-  })
-  .then(() => {
-    console.log("✅ Request successfully sent to Google (no-cors mode)!");
-  })
-  .catch(err => {
-    console.error("❌ Network error sending to Google:", err);
-  });
+    const payload = {
+      name: username,
+      subject: subjectName,
+      chapter: chapterName,
+      score: score,
+      total: total,
+      percentage: pct,
+      timeTaken: Math.round((Date.now() - quizStartTime) / 1000),
+      tabSwitches: tabSwitches,
+      attempt: attempt,
+      wrongAnswers: wrongAnswers,
+      device: navigator.userAgent
+    };
+    fetch(APPS_SCRIPT_URL, {
+  method: 'POST',
+  body: JSON.stringify(payload),
+  headers: { 'Content-Type': 'text/plain' },
+  mode: 'no-cors',
+  redirect: 'follow'
+}).catch(()=>{});
+  } catch(e){}
 }
-
 function shareWhatsApp(){
   const msg=`🎓 *TTC Quiz Result*\n\n👤 *Student:* ${username}\n📘 *Subject:* ${subjectName}\n📖 *Chapter:* ${chapterName}\n🏆 *Score:* ${score}/${questions.length}\n\n_Tushar Tuition Classes, Wardha_ 📚`;
   window.open("https://wa.me/?text="+encodeURIComponent(msg));
