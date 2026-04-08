@@ -908,6 +908,18 @@ const quizData=[
 let username='', questions=[], qIndex=0, score=0;
 const letters=["A","B","C","D"];
  
+/* ════════════════════════
+   TRACKING ENGINE
+════════════════════════ */
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+let tabSwitches=0, wrongAnswers=[], quizStartTime=0;
+ 
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden && qIndex > 0 && qIndex < (questions.length || 999)) {
+    tabSwitches++;
+  }
+});
+ 
 const savedName=localStorage.getItem("ttc_name")||"";
 if(savedName) document.getElementById("username").value=savedName;
  
@@ -932,6 +944,7 @@ function startWelcome(){
 }
 function startQuiz(){
   questions=shuffle(quizData); qIndex=0; score=0;
+  wrongAnswers=[]; tabSwitches=0; quizStartTime=Date.now();
   showScreen("quizScreen"); loadQuestion();
 }
 function loadQuestion(){
@@ -961,6 +974,7 @@ function selectOption(el,opt,q){
   } else {
     el.classList.add("wrong");
     document.querySelectorAll(".option").forEach(o=>{ if(o.querySelector(".opt-text")?.innerText.trim()===q.correct) o.classList.add("correct"); });
+    wrongAnswers.push({question: q.question, yourAnswer: opt, correct: q.correct});
   }
   document.getElementById("explText").innerText=q.explanation;
   document.getElementById("explBox").classList.add("show");
@@ -985,6 +999,34 @@ function showResult(){
   document.getElementById("resultChip").innerText=chipText;
   document.getElementById("scorePct").style.background=pctBg;
   confetti({particleCount:180,spread:110,origin:{y:0.45},colors:["#4361EE","#C8FF00","#FF3D8A","#FF6B35","#ffffff"]});
+  sendToSheet(total, pct);
+}
+ 
+function sendToSheet(total, pct){
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbyBoPDmIW8VwwKYh5lxW6-HEepYjCNnMEYdmgF1riE0YNc2KbeDEkofq-1wwGUm/exec') return;
+  try {
+    const attemptKey = 'ttc_att_' + subjectName + '_' + chapterName;
+    const attempt = parseInt(localStorage.getItem(attemptKey) || '0') + 1;
+    localStorage.setItem(attemptKey, attempt);
+    const payload = {
+      name: username,
+      subject: subjectName,
+      chapter: chapterName,
+      score: score,
+      total: total,
+      percentage: pct,
+      timeTaken: Math.round((Date.now() - quizStartTime) / 1000),
+      tabSwitches: tabSwitches,
+      attempt: attempt,
+      wrongAnswers: wrongAnswers,
+      device: navigator.userAgent
+    };
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'text/plain' }
+    }).catch(()=>{});
+  } catch(e){}
 }
 function shareWhatsApp(){
   const msg=`🎓 *TTC Quiz Result*\n\n👤 *Student:* ${username}\n📘 *Subject:* ${subjectName}\n📖 *Chapter:* ${chapterName}\n🏆 *Score:* ${score}/${questions.length}\n\n_Tushar Tuition Classes, Wardha_ 📚`;
