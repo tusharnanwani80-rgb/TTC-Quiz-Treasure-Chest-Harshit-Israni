@@ -911,7 +911,9 @@ const letters=["A","B","C","D"];
 /* ════════════════════════
    TRACKING ENGINE
 ════════════════════════ */
+// 🚨 IMPORTANT: REPLACE THE TEXT BELOW WITH YOUR GOOGLE APPS SCRIPT URL 🚨
 const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
 let tabSwitches=0, wrongAnswers=[], quizStartTime=0;
  
 document.addEventListener('visibilitychange', ()=>{
@@ -1003,15 +1005,16 @@ function showResult(){
 }
  
 function sendToSheet(total, pct){
-  // Basic check to make sure the URL was pasted
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbycwa2hKK4CCGGWhG7WOopyI7xqalANca9BCEiiW_AK_HwzS4-6FyQIgm_uL5OXGXgu/exec') || APPS_SCRIPT_URL.includes('script.google.c..............')) {
+  // 1. Explicitly warn you if the URL is missing or incorrect
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbycwa2hKK4CCGGWhG7WOopyI7xqalANca9BCEiiW_AK_HwzS4-6FyQIgm_uL5OXGXgu/exec' || APPS_SCRIPT_URL.includes('script.google.c..............')) {
+    alert("⚠️ Developer Alert: The Google Apps Script URL is missing!\n\nPlease paste your real URL into line 376 of the code. The score will not be saved.");
     console.error("APPS SCRIPT URL is missing or invalid!");
     return;
   }
  
   console.log("Preparing to send data to Google Sheets...");
 
-  // 1. Handle attempt tracking safely (won't crash if browser blocks storage)
+  // 2. Handle attempt tracking safely (won't crash if browser blocks storage)
   let attempt = 1;
   try {
     const attemptKey = 'ttc_att_' + subjectName + '_' + chapterName;
@@ -1021,36 +1024,38 @@ function sendToSheet(total, pct){
     console.warn("Storage blocked by browser tracking prevention. Defaulting attempt to 1.");
   }
 
-  // 2. Send the data safely
-  try {
-    const payload = {
-      name: username,
-      subject: subjectName,
-      chapter: chapterName,
-      score: score,
-      total: total,
-      percentage: pct,
-      timeTaken: Math.round((Date.now() - quizStartTime) / 1000),
-      tabSwitches: tabSwitches,
-      attempt: attempt,
-      wrongAnswers: wrongAnswers,
-      device: navigator.userAgent
-    };
-    
-    console.log("Sending payload...", payload);
+  // 3. Build Payload
+  const payload = {
+    name: username,
+    subject: subjectName,
+    chapter: chapterName,
+    score: score,
+    total: total,
+    percentage: pct,
+    timeTaken: Math.round((Date.now() - quizStartTime) / 1000),
+    tabSwitches: tabSwitches,
+    attempt: attempt,
+    wrongAnswers: wrongAnswers,
+    device: navigator.userAgent
+  };
+  
+  console.log("Sending payload...", payload);
 
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-      headers: { 'Content-Type': 'text/plain' }
-    })
-    .then(response => response.json())
-    .then(data => console.log("✅ Success! Google Sheet responded:", data))
-    .catch(err => console.error("❌ Fetch failed! Browser blocked the connection:", err));
-
-  } catch(e){
-    console.error("❌ Critical error building payload:", e);
-  }
+  // 4. Send the data safely bypassing CORS completely
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors', // <-- THIS BYPASSES BROWSER SECURITY BLOCKS
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify(payload)
+  })
+  .then(() => {
+    console.log("✅ Request successfully sent to Google (no-cors mode)!");
+  })
+  .catch(err => {
+    console.error("❌ Network error sending to Google:", err);
+  });
 }
 
 function shareWhatsApp(){
