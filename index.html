@@ -1003,7 +1003,7 @@ function showResult(){
 }
  
 function sendToSheet(total, pct){
-  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxilDWHWXMAs3cUS3YCLxEcdA4JO3b3Bom396-4CxkxUOkkVRqKI-jJEFSBDhTgmeT2sA/exec') return;
+  if(!APPS_SCRIPT_URL || APPS_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzXaLch9P7Ej4jDCGlkwNJzwcIGSVNaN59MOeQenSB7ekj2_YmI0M89IV89eivZAInNxg/exec') return;
   try {
     const attemptKey = 'ttc_att_' + subjectName + '_' + chapterName;
     const attempt = parseInt(localStorage.getItem(attemptKey) || '0') + 1;
